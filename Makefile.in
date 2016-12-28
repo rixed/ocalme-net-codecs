@@ -1,0 +1,62 @@
+# vim:filetype=make
+top_srcdir = @top_srcdir@
+PKG_NAME = net_codecs
+
+ARCHIVES = net_codecs.cma
+XARCHIVES = $(ARCHIVES:.cma=.cmxa)
+
+ARC_SOURCES = CodecHttp.ml
+
+REQUIRES = batteries parsercombinator.common
+
+all: $(ARCHIVES) $(XARCHIVES)
+
+include $(top_srcdir)/make.common
+
+net_codecs.cma: $(patsubst %.mli,%.cmo,$(filter %.mli, $(ARC_SOURCES))) $(patsubst %.ml,%.cmo,$(filter %.ml, $(ARC_SOURCES)))
+	$(OCAMLC)   -a -o $@ -package "$(REQUIRES)" -custom -linkpkg $(OCAMLFLAGS) $(patsubst %.ml,%.cmo,$(filter %.ml, $(ARC_SOURCES)))
+net_codecs.cmxa: $(patsubst %.mli,%.cmi,$(filter %.mli, $(ARC_SOURCES))) $(patsubst %.ml,%.cmx,$(filter %.ml, $(ARC_SOURCES)))
+	$(OCAMLOPT) -a -o $@ -package "$(REQUIRES)" $(OCAMLOPTFLAGS) $(patsubst %.ml,%.cmx,$(filter %.ml, $(ARC_SOURCES)))
+
+clean:
+	$(RM) *.cm[ioxa] *.cmxa *.cmxs *.a *.s *.o test.* .depend *.annot all_tests.*
+
+distclean: clean
+	$(RM) *.byte *.opt $(ARCHIVES) $(XARCHIVES)
+
+clear:
+	sed -i.bak -e 's/[ 	]\+$$//' $(wildcard *.adoc)
+
+install: $(ARCHIVES) $(XARCHIVES)
+	for xarch in $(XARCHIVES) ; do \
+	  if test -f "$$xarch" ; then extra="$$extra $$xarch "`basename "$$xarch" .cmxa`.a ; fi ; \
+	done ; \
+	if test -n "$$extra" ; then extra="$$extra *.cmx" ; fi ; \
+	@OCAMLFIND@ install "$(PKG_NAME)" *.cmi $(ARCHIVES) META $$extra
+
+uninstall:
+	@OCAMLFIND@ remove $(PKG_NAME)
+
+reinstall: uninstall install
+
+# Tests
+
+all_tests.ml: $(ARC_SOURCES)
+	$(QTEST) --shuffle --preamble 'open Batteries;; open TestEnv' -o $@ extract $^
+
+all_tests.opt: $(XARCHIVES) TestEnv.cmx all_tests.ml
+	$(OCAMLOPT) -o $@ $(SYNTAX) -package "$(REQUIRES) qcheck" -linkpkg $(OCAMLOPTFLAGS) $^
+
+check: all_tests.opt
+	./all_tests.opt || echo "FAILURE"
+
+# Dependencies
+
+dep:
+	$(RM) .depend
+	$(MAKE) .depend
+
+.depend: $(ARC_SOURCES)
+	$(OCAMLDEP) -package "$(REQUIRES)" $(filter %.ml, $(ARC_SOURCES)) TestEnv.ml $(filter %.mli, $(ARC_SOURCES)) > $@
+
+-include .depend

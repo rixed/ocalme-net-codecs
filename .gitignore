@@ -1,0 +1,17 @@
+m4/
+*.status
+*.cache
+*.log
+Makefile
+make.common
+.depend
+*.annot
+*.cmi
+*.cmo
+*.cmx
+*.o
+*.s
+*.a
+*.cma
+*.cmxa
+all_tests.*
