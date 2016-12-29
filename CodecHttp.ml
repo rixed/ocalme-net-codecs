@@ -296,7 +296,7 @@ struct
    *)
 
   let headers m =
-    (several_greedy ~sep:none ~what:"HTTP headers" header +-
+    (repeat_greedy ~sep:none ~what:"HTTP headers" header +-
      crlf) m
 
   let chunk_header m =
@@ -351,6 +351,14 @@ struct
      Msg.{ start_line = sl ; headers = hs ; body }) m
 
   (*$= & ~printer:(IO.to_string HttpParser.(P.print_result Msg.print))
+    (Ok Msg.{ \
+      start_line = StartLine.Request RequestLine.{ cmd = Command.GET ; url = "/" ; version = 1,0 } ; \
+      headers = [] ; \
+      body = "" }) \
+      (let open HttpParser.P in \
+       HttpParser.p [] None no_corr \
+         (stream_of_string "GET / HTTP/1.0\r\n\r\n") |> \
+       to_result)
     (Ok test_files.(0).pdu) \
       (let open HttpParser.P in \
        HttpParser.p [] None no_corr \
