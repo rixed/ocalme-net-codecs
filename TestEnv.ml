@@ -1,4 +1,3 @@
-
 open Batteries
 
 (* It is preferable to escape special chars *)
@@ -15,13 +14,11 @@ let stream_of_string s =
     loop (n-1) ((n, s.[n]) :: tl) in
   loop (String.length s - 1) []
 
-(* If I earned one cent each time I wrote that one... *)
-let read_whole_file file =
-  let ic = Unix.(openfile file [O_RDONLY] 0 |> input_of_descr) in
-  IO.read_all ic (* autoclosed *)
-
 let stream_of_file f =
-  read_whole_file f |> stream_of_string
+  let ic = open_in f in
+  let str = IO.read_all ic |> stream_of_string in
+  close_in ic ;
+  str
 
 let no_corr = Parsers.no_error_correction
 
