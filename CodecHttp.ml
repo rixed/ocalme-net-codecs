@@ -107,7 +107,7 @@ end
 module RequestLine = struct
   type t = { cmd : Command.t ; url : string ; version : Version.t }
   let print fmt t =
-    Printf.fprintf fmt "%a %s %a"
+    Printf.fprintf fmt "%a %s HTTP/%a"
       Command.print t.cmd t.url Version.print t.version
 end
 
@@ -199,18 +199,21 @@ struct
     (string "HTTP/" -+ unsigned_decimal_number +-
      item '.' ++ unsigned_decimal_number) m
 
-  (*$= & ~printer:(IO.to_string (HttpParser.P.print_result Version.print))
+  (*$= & ~printer:(IO.to_string (print_result Version.print))
     (Ok (1, 0)) \
       (let open HttpParser in \
        let open P in \
        (version +- eof) [] None no_corr \
          (stream_of_string "HTTP/1.0") |> \
-       to_result)
+       to_result_no_stream)
    *)
 
   let spaces m =
     let m = "spaces"::m in
     several_greedy ~sep:none (item ' ') m
+  let maybe_spaces m =
+    let m = "optional spaces"::m in
+    repeat_greedy ~sep:none (item ' ') m
   let non_spaces ?what ?max m =
     let m = "non spaces"::m in
     let not_a_space c = c <> ' ' && c <> '\r' && c <> '\n' in
@@ -233,13 +236,13 @@ struct
        RequestLine.{ cmd = Command.of_string cmd ; url ; version }
     ) m
 
-  (*$= & ~printer:(IO.to_string (HttpParser.P.print_result RequestLine.print))
+  (*$= & ~printer:(IO.to_string (print_result RequestLine.print))
     (Ok RequestLine.{ cmd = Command.GET ; url = "/test1" ; version = 1, 0 }) \
       (let open HttpParser in \
        let open P in \
        (request_line +- eof) [] None no_corr (stream_of_string \
          "GET /test1 HTTP/1.0\r\n") |> \
-       to_result)
+       to_result_no_stream)
    *)
 
   let status_line  m =
@@ -256,13 +259,13 @@ struct
        StatusLine.{ version ; code ; msg }
     ) m
 
-  (*$= & ~printer:(IO.to_string (HttpParser.P.print_result StatusLine.print))
+  (*$= & ~printer:(IO.to_string (print_result StatusLine.print))
     (Ok StatusLine.{ version = (2, 1) ; code = 200 ; msg = "OK" }) \
       (let open HttpParser in \
        let open P in \
        (status_line +- eof) [] None no_corr (stream_of_string \
          "HTTP/2.1 200 OK\r\n") |> \
-       to_result)
+       to_result_no_stream)
    *)
 
   let start_line m =
@@ -279,20 +282,27 @@ struct
     ((several_greedy ~sep:none ~what:"field name"
         (cond "field name char" field_name_char 'x') >>: 
       String.of_list) +-
-     item ':' +- spaces ++
+     item ':' +- maybe_spaces ++
      (* TODO: multi-line values *)
      (several_greedy ~sep:none ~what:"field value"
         (cond "field value char" field_value_char 'x') >>:
       fun l -> String.strip ~chars:"\t\r\n " (String.of_list l)) +-
     crlf) m
 
-  (*$= & ~printer:(IO.to_string (HttpParser.P.print_result Header.print))
+  (*$= & ~printer:(IO.to_string (print_result Header.print))
     (Ok ("GlopGlop", "pas glop")) \
       (let open HttpParser in \
        let open P in \
        (header +- eof) [] None no_corr (stream_of_string \
         "GlopGlop: pas glop\r\n") |> \
-       to_result)
+       to_result_no_stream)
+    (* No space after ':' is OK: *) \
+    (Ok ("Content-Length", "42")) \
+      (let open HttpParser in \
+       let open P in \
+        (header +- eof) [] None no_corr (stream_of_string \
+          "Content-Length:42\r\n") |> \
+        to_result_no_stream)
    *)
 
   let headers m =
@@ -350,7 +360,8 @@ struct
      body sl hs >>: fun body ->
      Msg.{ start_line = sl ; headers = hs ; body }) m
 
-  (*$= & ~printer:(IO.to_string HttpParser.(P.print_result Msg.print))
+  (*$= & ~printer:(IO.to_string (print_result Msg.print))
+    (* No headers is OK: *) \
     (Ok Msg.{ \
       start_line = StartLine.Request RequestLine.{ cmd = Command.GET ; url = "/" ; version = 1,0 } ; \
       headers = [] ; \
@@ -358,22 +369,40 @@ struct
       (let open HttpParser.P in \
        HttpParser.p [] None no_corr \
          (stream_of_string "GET / HTTP/1.0\r\n\r\n") |> \
-       to_result)
+       to_result_no_stream)
+    (* Trailing garbage must not prevent the parser to find the message: *) \
+    (Ok Msg.{ \
+      start_line = StartLine.Request RequestLine.{ cmd = Command.GET ; url = "/" ; version = 1,0 } ; \
+      headers = [ "Hello", "World" ] ; \
+      body = "" }) \
+      (let open HttpParser.P in \
+       HttpParser.p [] None no_corr \
+         (stream_of_string "GET / HTTP/1.0\r\nHello: World\r\n\r\nXXX") |> \
+       to_result_no_stream)
+    (* ... even when there are no headers: *) \
+    (Ok Msg.{ \
+      start_line = StartLine.Request RequestLine.{ cmd = Command.GET ; url = "/" ; version = 1,0 } ; \
+      headers = [] ; \
+      body = "" }) \
+      (let open HttpParser.P in \
+       HttpParser.p [] None no_corr \
+         (stream_of_string "GET / HTTP/1.0\r\n\r\nXXX") |> \
+       to_result_no_stream)
     (Ok test_files.(0).pdu) \
       (let open HttpParser.P in \
        HttpParser.p [] None no_corr \
          (stream_of_file test_files.(0).fname) |> \
-       to_result |> abbreviate_result)
+       to_result_no_stream |> abbreviate_result)
     (Ok test_files.(1).pdu) \
       (let open HttpParser.P in \
        HttpParser.p [] None no_corr \
          (stream_of_file test_files.(1).fname) |> \
-       to_result |> abbreviate_result)
+       to_result_no_stream |> abbreviate_result)
     (Ok test_files.(2).pdu) \
       (let open HttpParser.P in \
        HttpParser.p [] None no_corr \
          (stream_of_file test_files.(2).fname) |> \
-       to_result |> abbreviate_result)
+       to_result_no_stream |> abbreviate_result)
    *)
 end
 
