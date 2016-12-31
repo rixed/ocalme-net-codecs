@@ -366,8 +366,7 @@ struct
       start_line = StartLine.Request RequestLine.{ cmd = Command.GET ; url = "/" ; version = 1,0 } ; \
       headers = [] ; \
       body = "" }) \
-      (let open HttpParser.P in \
-       HttpParser.p [] None no_corr \
+      (HttpParser.p [] None no_corr \
          (stream_of_string "GET / HTTP/1.0\r\n\r\n") |> \
        to_result_no_stream)
     (* Trailing garbage must not prevent the parser to find the message: *) \
@@ -375,8 +374,7 @@ struct
       start_line = StartLine.Request RequestLine.{ cmd = Command.GET ; url = "/" ; version = 1,0 } ; \
       headers = [ "Hello", "World" ] ; \
       body = "" }) \
-      (let open HttpParser.P in \
-       HttpParser.p [] None no_corr \
+      (HttpParser.p [] None no_corr \
          (stream_of_string "GET / HTTP/1.0\r\nHello: World\r\n\r\nXXX") |> \
        to_result_no_stream)
     (* ... even when there are no headers: *) \
@@ -384,23 +382,19 @@ struct
       start_line = StartLine.Request RequestLine.{ cmd = Command.GET ; url = "/" ; version = 1,0 } ; \
       headers = [] ; \
       body = "" }) \
-      (let open HttpParser.P in \
-       HttpParser.p [] None no_corr \
+      (HttpParser.p [] None no_corr \
          (stream_of_string "GET / HTTP/1.0\r\n\r\nXXX") |> \
        to_result_no_stream)
     (Ok test_files.(0).pdu) \
-      (let open HttpParser.P in \
-       HttpParser.p [] None no_corr \
+      (HttpParser.p [] None no_corr \
          (stream_of_file test_files.(0).fname) |> \
        to_result_no_stream |> abbreviate_result)
     (Ok test_files.(1).pdu) \
-      (let open HttpParser.P in \
-       HttpParser.p [] None no_corr \
+      (HttpParser.p [] None no_corr \
          (stream_of_file test_files.(1).fname) |> \
        to_result_no_stream |> abbreviate_result)
     (Ok test_files.(2).pdu) \
-      (let open HttpParser.P in \
-       HttpParser.p [] None no_corr \
+      (HttpParser.p [] None no_corr \
          (stream_of_file test_files.(2).fname) |> \
        to_result_no_stream |> abbreviate_result)
    *)

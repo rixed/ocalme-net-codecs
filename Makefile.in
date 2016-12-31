@@ -27,12 +27,13 @@ distclean: clean
 clear:
 	sed -i.bak -e 's/[ 	]\+$$//' $(wildcard *.adoc)
 
+# Note: avoid installing TestEnv files
 install: $(ARCHIVES) $(XARCHIVES)
 	for xarch in $(XARCHIVES) ; do \
 	  if test -f "$$xarch" ; then extra="$$extra $$xarch "`basename "$$xarch" .cmxa`.a ; fi ; \
 	done ; \
-	if test -n "$$extra" ; then extra="$$extra *.cmx" ; fi ; \
-	@OCAMLFIND@ install "$(PKG_NAME)" *.cmi $(ARCHIVES) META $$extra
+	if test -n "$$extra" ; then extra="$$extra $(patsubst %.ml,%.cmx,$(ARC_SOURCES))" ; fi ; \
+	@OCAMLFIND@ install "$(PKG_NAME)" $(patsubst %.ml,%.cmi,$(ARC_SOURCES)) $(ARCHIVES) META $$extra
 
 uninstall:
 	@OCAMLFIND@ remove $(PKG_NAME)
