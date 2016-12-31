@@ -5,7 +5,8 @@ PKG_NAME = net_codecs
 ARCHIVES = net_codecs.cma
 XARCHIVES = $(ARCHIVES:.cma=.cmxa)
 
-ARC_SOURCES = CodecHttp.ml
+ARC_SOURCES = \
+	CodecHttp.ml CodecUrl.ml
 
 REQUIRES = batteries parsercombinator.common
 
