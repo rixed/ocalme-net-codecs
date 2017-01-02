@@ -72,7 +72,7 @@ let rec string_find_first ?(from=0) f str =
 
 (** [Url.of_string str] will return the {!Url.t} corresponding to the given [str] *)
 let of_string ?(force_absolute=false) str =
-  let str = decode str in
+  let str = decode str in (* shouldn't we wait until we have split the url? *)
   (* If we insist this url must be absolute then add the missing scheme *)
   let str =
     if force_absolute then (
@@ -297,3 +297,25 @@ let resolve base url =
   test "g/./h" "http://a/b/c/g/h" && \
   test "g/../h" "http://a/b/c/h"
 *)
+
+(* Helper for parsing query parameters *)
+
+let parse_query_of_url url =
+  let params = Hashtbl.create 5 in
+  let qs = String.split_on_char '&' url.query in
+  List.iter (fun q ->
+    let n, v =
+      try String.split ~by:"=" q
+      with Not_found -> q,"" in
+    Hashtbl.modify_opt n (function
+      | None -> Some [v]
+      | Some vs -> Some (v::vs)) params) qs ;
+  params
+
+(* And a helper to get values from there *)
+
+let get_single_query_param params name =
+  match Hashtbl.find params name with
+  | v::_ -> v
+  | [] -> assert false
+
