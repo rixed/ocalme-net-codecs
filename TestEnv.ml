@@ -8,15 +8,9 @@ end
 
 module ParserConfig = Parsers.SimpleConfig (MyChar)
 
-let stream_of_string s =
-  let rec loop n tl =
-    if n < 0 then tl else
-    loop (n-1) ((n, s.[n]) :: tl) in
-  loop (String.length s - 1) []
-
 let stream_of_file f =
   let ic = open_in f in
-  let str = IO.read_all ic |> stream_of_string in
+  let str = IO.read_all ic |> ParserConfig.stream_of_string in
   close_in ic ;
   str
 

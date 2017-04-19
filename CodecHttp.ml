@@ -204,7 +204,7 @@ struct
       (let open HttpParser in \
        let open P in \
        (version +- eof) [] None no_corr \
-         (stream_of_string "HTTP/1.0") |> \
+         (ParserConfig.stream_of_string "HTTP/1.0") |> \
        to_result_no_stream)
    *)
 
@@ -240,7 +240,7 @@ struct
     (Ok RequestLine.{ cmd = Command.GET ; url = "/test1" ; version = 1, 0 }) \
       (let open HttpParser in \
        let open P in \
-       (request_line +- eof) [] None no_corr (stream_of_string \
+       (request_line +- eof) [] None no_corr (ParserConfig.stream_of_string \
          "GET /test1 HTTP/1.0\r\n") |> \
        to_result_no_stream)
    *)
@@ -263,7 +263,7 @@ struct
     (Ok StatusLine.{ version = (2, 1) ; code = 200 ; msg = "OK" }) \
       (let open HttpParser in \
        let open P in \
-       (status_line +- eof) [] None no_corr (stream_of_string \
+       (status_line +- eof) [] None no_corr (ParserConfig.stream_of_string \
          "HTTP/2.1 200 OK\r\n") |> \
        to_result_no_stream)
    *)
@@ -293,14 +293,14 @@ struct
     (Ok ("GlopGlop", "pas glop")) \
       (let open HttpParser in \
        let open P in \
-       (header +- eof) [] None no_corr (stream_of_string \
+       (header +- eof) [] None no_corr (ParserConfig.stream_of_string \
         "GlopGlop: pas glop\r\n") |> \
        to_result_no_stream)
     (* No space after ':' is OK: *) \
     (Ok ("Content-Length", "42")) \
       (let open HttpParser in \
        let open P in \
-        (header +- eof) [] None no_corr (stream_of_string \
+        (header +- eof) [] None no_corr (ParserConfig.stream_of_string \
           "Content-Length:42\r\n") |> \
         to_result_no_stream)
    *)
@@ -367,7 +367,7 @@ struct
       headers = [] ; \
       body = "" }) \
       (HttpParser.p [] None no_corr \
-         (stream_of_string "GET / HTTP/1.0\r\n\r\n") |> \
+         (ParserConfig.stream_of_string "GET / HTTP/1.0\r\n\r\n") |> \
        to_result_no_stream)
     (* Trailing garbage must not prevent the parser to find the message: *) \
     (Ok Msg.{ \
@@ -375,7 +375,7 @@ struct
       headers = [ "Hello", "World" ] ; \
       body = "" }) \
       (HttpParser.p [] None no_corr \
-         (stream_of_string "GET / HTTP/1.0\r\nHello: World\r\n\r\nXXX") |> \
+         (ParserConfig.stream_of_string "GET / HTTP/1.0\r\nHello: World\r\n\r\nXXX") |> \
        to_result_no_stream)
     (* ... even when there are no headers: *) \
     (Ok Msg.{ \
@@ -383,7 +383,7 @@ struct
       headers = [] ; \
       body = "" }) \
       (HttpParser.p [] None no_corr \
-         (stream_of_string "GET / HTTP/1.0\r\n\r\nXXX") |> \
+         (ParserConfig.stream_of_string "GET / HTTP/1.0\r\n\r\nXXX") |> \
        to_result_no_stream)
     (Ok test_files.(0).pdu) \
       (HttpParser.p [] None no_corr \
