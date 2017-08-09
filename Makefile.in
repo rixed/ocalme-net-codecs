@@ -8,7 +8,7 @@ XARCHIVES = $(ARCHIVES:.cma=.cmxa)
 ARC_SOURCES = \
 	CodecHttp.ml CodecUrl.ml
 
-REQUIRES = batteries parsercombinator.common
+REQUIRES = batteries parsercombinator
 
 all: $(ARCHIVES) $(XARCHIVES)
 

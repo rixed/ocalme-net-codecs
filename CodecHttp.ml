@@ -194,10 +194,13 @@ struct
   module U = ParsersUsual.Make (P)
   open U
 
+  let unsigned_int ?what =
+    unsigned_decimal_number ?what >>: Num.int_of_num
+
   let version m =
     let m = "HTTP version"::m in
-    (string "HTTP/" -+ unsigned_decimal_number +-
-     item '.' ++ unsigned_decimal_number) m
+    (string "HTTP/" -+ unsigned_int +-
+     item '.' ++ unsigned_int) m
 
   (*$= & ~printer:(IO.to_string (print_result Version.print))
     (Ok (1, 0)) \
@@ -249,7 +252,7 @@ struct
     let m = "HTTP status line"::m in
     (version +-
      spaces ++
-     unsigned_decimal_number ~what:"HTTP status code" +-
+     unsigned_int ~what:"HTTP status code" +-
      spaces ++
      (several_greedy ~what:"HTTP status message" ~sep:none
        (cond "no carriage-return" (fun c -> c <> '\r') 'x') >>:
@@ -310,7 +313,7 @@ struct
      crlf) m
 
   let chunk_header m =
-    ((non_decimal_integer 16 none hexadecimal_digit) +-
+    ((non_decimal_integer 16 none hexadecimal_digit >>: Num.int_of_num) +-
      crlf) m
 
   let chunk m =
