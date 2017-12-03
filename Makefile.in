@@ -6,7 +6,7 @@ ARCHIVES = net_codecs.cma
 XARCHIVES = $(ARCHIVES:.cma=.cmxa)
 
 ARC_SOURCES = \
-	CodecHttp.ml CodecUrl.ml
+	CodecHttp.ml CodecUrl.ml CodecMultipartFormData.ml
 
 REQUIRES = batteries parsercombinator
 
