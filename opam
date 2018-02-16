@@ -9,8 +9,10 @@ build: [
 ]
 install: [make "install"]
 remove: ["ocamlfind" "remove" "net_codecs"]
+build-test: [[make "check"]]
 depends: [
   "ocamlfind" {build}
   "batteries"
   "parsercombinator"
+  "qtest" {test}
 ]
