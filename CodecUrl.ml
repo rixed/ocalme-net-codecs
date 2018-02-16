@@ -28,7 +28,7 @@ let int_of_hexchar c_ =
 (** [decode str] will decode every URL encoded char present in str *)
 let decode s =
   let len = String.length s in
-  let s' = String.create len in
+  let s' = Bytes.create len in
   let rec aux o o' =
     if o < len then (
       let skip = ref 1 in
@@ -37,14 +37,14 @@ let decode s =
         let c =
           try (int_of_hexchar s.[o+1] lsl 4) + int_of_hexchar s.[o+2]
           with Invalid_argument _ -> Char.code '?' in
-        s'.[o'] <- Char.chr c
+        Bytes.set s' o' (Char.chr c)
       ) else (
-        s'.[o'] <- s.[o]
+        Bytes.set s' o' s.[o]
       ) ;
       aux (o + !skip) (o'+1)
     ) else o' in
   let len' = aux 0 0 in
-  String.sub s' 0 len'
+  Bytes.(sub s' 0 len' |> to_string)
 
 (*$= decode & ~printer:identity
     "came_from=/" (decode "came_from=%2F")
