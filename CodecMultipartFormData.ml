@@ -38,6 +38,9 @@ type field_data =
     filename: string ;
     content_type: string }
 
+let field_data_of_text s =
+  { value = s ; filename = "" ; content_type = "text/plain" }
+
 let extract_field chunk =
   let pos_separator = Str.search_forward separator_re chunk 0 in
   let header = String.sub chunk 0 pos_separator in
@@ -68,21 +71,74 @@ let rec extract_fields accu = function
 	      (try extract_field chunk :: accu with Not_found -> accu)
 	      rem
 
+module Url =
+struct
+  (*$< Url *)
+  let is_in_set set c = try ignore (String.index set c); true with Not_found -> false
+
+  let reserved_chars = "!*'();:@&=+$,/?#[]"
+  let unreseved_chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_.~"
+  let is_reserved = is_in_set reserved_chars
+  let is_unreserved = is_in_set unreseved_chars
+
+  let int_of_hexchar c_ =
+      let c = Char.code c_ in
+      if c >= Char.code '0' && c <= Char.code '9' then c - Char.code '0' else
+      if c >= Char.code 'a' && c <= Char.code 'f' then 10 + c - Char.code 'a' else
+      if c >= Char.code 'A' && c <= Char.code 'F' then 10 + c - Char.code 'A' else (
+          Printf.fprintf stderr "Tools: Char is not hex: '%c'\n" c_ ;
+          invalid_arg "Bad char"
+      )
+
+  (** [decode str] will decode every URL encoded char present in str *)
+  let decode s =
+      let len = String.length s in
+      let s' = Bytes.create len in
+      let rec aux o o' =
+          if o < len then (
+              let skip = ref 1 in
+              if o < len - 2 && s.[o] = '%' then (
+                  skip := 3 ;
+                  let c =
+                      try (int_of_hexchar s.[o+1] lsl 4) + int_of_hexchar s.[o+2]
+                      with Invalid_argument _ -> Char.code '?' in
+                  s'.[o'] <- Char.chr c
+              ) else (
+                  s'.[o'] <- s.[o]
+              ) ;
+              aux (o + !skip) (o'+1)
+          ) else o' in
+      let len' = aux 0 0 in
+      let res = Bytes.sub s' 0 len' |> Bytes.to_string in
+      (* Printf.printf "Url: decode: '%s' -> '%s'\n" s res ; *)
+      res
+  (*$= decode & ~printer:identity
+      "came_from=/" (decode "came_from=%2F")
+  *)
+  (*$>*)
+end
+
 let parse_multipart_args mime_type body =
-  if not (String.starts_with mime_type "multipart/form-data")
-  then
+  if String.starts_with mime_type "application/x-www-form-urlencoded" then
+    String.split_on_char '&' body |>
+    List.filter_map (fun nev ->
+      match String.split ~by:"=" nev with
+      | exception Not_found -> None
+      | n, v -> Some (n, field_data_of_text (Url.decode v)))
+  else if String.starts_with mime_type "multipart/form-data" then
+    (* Determine boundary delimiter *)
+    let boundary = "--"^
+      try
+        match_string boundary_re1 boundary_re2 mime_type
+      with Not_found ->
+        failwith ("parse_multipart_args: no boundary provided in "^
+                  mime_type) in
+    String.nsplit ~by:boundary body |>
+    extract_fields [] |>
+    List.rev
+  else
     failwith ("parse_multipart_args: cannot handle MIME type "^
-              mime_type) ;
-  (* Determine boundary delimiter *)
-  let boundary = "--"^
-    try
-      match_string boundary_re1 boundary_re2 mime_type
-    with Not_found ->
-      failwith ("parse_multipart_args: no boundary provided in "^
-                mime_type) in
-  String.nsplit ~by:boundary body |>
-  extract_fields [] |>
-  List.rev
+              mime_type)
 
 (*$= parse_multipart_args & ~printer:dump
   [ "a", { filename = "" ; content_type = "" ; value = "b" } ; \
