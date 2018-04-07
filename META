@@ -1,5 +1,5 @@
 description = "Primitive decoder for some protocols"
-version = "0.2"
+version = "0.3"
 requires = "batteries parsercombinator"
 archive(byte) = "net_codecs.cma"
 archive(native) = "net_codecs.cmxa"

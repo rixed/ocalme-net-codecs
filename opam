@@ -1,6 +1,6 @@
 opam-version: "1.2"
 name: "net_codecs"
-version: "0.2"
+version: "0.3"
 maintainer: "Cedric Cellier <rixed@happyleptic.org>"
 authors: "Cedric Cellier <rixed@happyleptic.org>"
 build: [
