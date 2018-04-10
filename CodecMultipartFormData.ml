@@ -119,9 +119,9 @@ struct
 end
 
 let parse_multipart_args mime_type body =
-  if String.starts_with mime_type "application/x-www-form-urlencoded" then
-    String.split_on_char '&' body |>
-    List.filter_map (fun nev ->
+  (if String.starts_with mime_type "application/x-www-form-urlencoded" then
+    (String.split_on_char '&' body |> List.enum) //@
+    (fun nev ->
       match String.split ~by:"=" nev with
       | exception Not_found -> None
       | n, v -> Some (n, field_data_of_text (Url.decode v)))
@@ -135,10 +135,11 @@ let parse_multipart_args mime_type body =
                   mime_type) in
     String.nsplit ~by:boundary body |>
     extract_fields [] |>
-    List.rev
+    List.enum
   else
     failwith ("parse_multipart_args: cannot handle MIME type "^
-              mime_type)
+              mime_type)) |>
+    Hashtbl.of_enum
 
 (*$= parse_multipart_args & ~printer:dump
   [ "a", { filename = "" ; content_type = "" ; value = "b" } ; \
@@ -162,5 +163,6 @@ let parse_multipart_args mime_type body =
        \r\n\\
        testfilecontent\r\n\\
        \r\n\\
-       --------------------------1605451f456c9a1a--")
+       --------------------------1605451f456c9a1a--" |> \
+       Hashtbl.to_list |> List.sort (fun (a,_) (b,_) -> compare a b))
 *)
