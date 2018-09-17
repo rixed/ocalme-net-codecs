@@ -131,8 +131,8 @@ let of_string ?(force_absolute=false) str =
     path ; params ; query }
 
 (*$= of_string & ~printer:dump
-    { scheme = "http" ; net_loc = "www.google.com" ; path = "/search" ; params = "" ; query = "ocaml" } \
-        (of_string "http://www.google.com/search?ocaml")
+    { scheme = "http" ; net_loc = "www.google.com:80" ; path = "/search" ; params = "" ; query = "ocaml" } \
+        (of_string "http://www.google.com:80/search?ocaml")
     { scheme = "" ; net_loc = "" ; path = "/search" ; params = "" ; query = "" } \
         (of_string "/search?")
     { scheme = "" ; net_loc = "" ; path = "../../rel" ; params = "" ; query = "yo" } \

@@ -372,6 +372,7 @@ struct
       (HttpParser.p [] None no_corr \
          (ParserConfig.stream_of_string "GET / HTTP/1.0\r\n\r\n") |> \
        to_result_no_stream)
+
     (* Trailing garbage must not prevent the parser to find the message: *) \
     (Ok Msg.{ \
       start_line = StartLine.Request RequestLine.{ cmd = Command.GET ; url = "/" ; version = 1,0 } ; \
@@ -380,6 +381,7 @@ struct
       (HttpParser.p [] None no_corr \
          (ParserConfig.stream_of_string "GET / HTTP/1.0\r\nHello: World\r\n\r\nXXX") |> \
        to_result_no_stream)
+
     (* ... even when there are no headers: *) \
     (Ok Msg.{ \
       start_line = StartLine.Request RequestLine.{ cmd = Command.GET ; url = "/" ; version = 1,0 } ; \
@@ -388,6 +390,17 @@ struct
       (HttpParser.p [] None no_corr \
          (ParserConfig.stream_of_string "GET / HTTP/1.0\r\n\r\nXXX") |> \
        to_result_no_stream)
+
+    (* Return the first message even when the stream is not finished: *) \
+    (Ok Msg.{ \
+      start_line = StartLine.Request RequestLine.{ cmd = Command.GET ; url = "/" ; version = 1,1 } ; \
+      headers = [] ; \
+      body = "" }) \
+      (HttpParser.p [] None no_corr \
+         (ParserConfig.stream_of_string \
+            "GET / HTTP/1.1\r\n\r\nGET / HTTP/1.1\r\n\r\n") |> \
+       to_result_no_stream)
+
     (Ok test_files.(0).pdu) \
       (HttpParser.p [] None no_corr \
          (stream_of_file test_files.(0).fname) |> \
