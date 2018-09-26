@@ -72,7 +72,6 @@ let rec string_find_first ?(from=0) f str =
 
 (** [Url.of_string str] will return the {!Url.t} corresponding to the given [str] *)
 let of_string ?(force_absolute=false) str =
-  let str = decode str in (* shouldn't we wait until we have split the url? *)
   (* If we insist this url must be absolute then add the missing scheme *)
   let str =
     if force_absolute then (
@@ -126,9 +125,16 @@ let of_string ?(force_absolute=false) str =
     with Not_found -> "", str in
   (* Parsing the Path *)
   let path = str in
-  { scheme  = String.lowercase scheme ;
-    net_loc = String.lowercase net_loc ;
-    path ; params ; query }
+  (* Decode each chunk.
+   * "Percent-encoded octets must be decoded at some point during the
+   * dereference process.  Applications must split the URI into its components
+   * and subcomponents prior to decoding the octets, as otherwise the decoded
+   * octets might be mistaken for delimiters." - RFC 3986 *)
+  { scheme = String.lowercase (decode scheme) ;
+    net_loc = String.lowercase (decode net_loc) ;
+    path = decode path ;
+    params = decode params ;
+    query = decode query }
 
 (*$= of_string & ~printer:dump
     { scheme = "http" ; net_loc = "www.google.com:80" ; path = "/search" ; params = "" ; query = "ocaml" } \
@@ -298,18 +304,25 @@ let resolve base url =
   test "g/../h" "http://a/b/c/h"
 *)
 
-(* Helper for parsing query parameters *)
+(* Helper for parsing query parameters
+ *
+ * In case of http schemes, the query part can be further parsed according to
+ * the application/x-www-form-urlencoded mime type rules, as described in
+ * https://www.w3.org/TR/html401/interact/forms.html#h-17.13.4.1: *)
 
 let parse_query_of_url url =
+  (* Decode the '+' encoding preserving the original query: *)
+  let query = String.map (function '+' -> ' ' | c -> c) url.query in
   let params = Hashtbl.create 5 in
-  let qs = String.split_on_char '&' url.query in
+  let qs = String.split_on_char '&' query in
   List.iter (fun q ->
     let n, v =
       try String.split ~by:"=" q
-      with Not_found -> q,"" in
+      with Not_found -> q, "" in
     Hashtbl.modify_opt n (function
       | None -> Some [v]
-      | Some vs -> Some (v::vs)) params) qs ;
+      | Some vs -> Some (v::vs)) params
+  ) qs ;
   params
 
 (* And a helper to get values from there *)
