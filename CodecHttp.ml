@@ -182,7 +182,7 @@ let must_close_cnx = header_present "Connection" "close"
 
 (** {2 HTTP Messages} *)
 
-(* those types are bogus ; use the types that are output from the parser.
+(* Those types are bogus ; use the types that are output from the parser.
  * We want those types to be common for encoder/decoder, *BUT* we want encode and
  * decode to be in two different modules so that a program do not have to have both.
  * Esp. only decoders should depend on parsercombinator. *)
