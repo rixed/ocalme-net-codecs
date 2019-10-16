@@ -15,7 +15,7 @@ all: $(ARCHIVES) $(XARCHIVES)
 include $(top_srcdir)/make.common
 
 net_codecs.cma: $(patsubst %.mli,%.cmo,$(filter %.mli, $(ARC_SOURCES))) $(patsubst %.ml,%.cmo,$(filter %.ml, $(ARC_SOURCES)))
-	$(OCAMLC)   -a -o $@ -package "$(REQUIRES)" -custom -linkpkg $(OCAMLFLAGS) $(patsubst %.ml,%.cmo,$(filter %.ml, $(ARC_SOURCES)))
+	$(OCAMLC)   -a -o $@ -package "$(REQUIRES)" -custom $(OCAMLFLAGS) $(patsubst %.ml,%.cmo,$(filter %.ml, $(ARC_SOURCES)))
 net_codecs.cmxa: $(patsubst %.mli,%.cmi,$(filter %.mli, $(ARC_SOURCES))) $(patsubst %.ml,%.cmx,$(filter %.ml, $(ARC_SOURCES)))
 	$(OCAMLOPT) -a -o $@ -package "$(REQUIRES)" $(OCAMLOPTFLAGS) $(patsubst %.ml,%.cmx,$(filter %.ml, $(ARC_SOURCES)))
 
