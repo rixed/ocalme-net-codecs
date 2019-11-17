@@ -2,13 +2,13 @@
 
 stdenv.mkDerivation rec {
   pname = "ocaml${ocaml.version}-net_codecs";
-  version = "1.0";
+  version = "1.1";
 
   src = fetchFromGitHub {
     owner = "rixed";
     repo = "ocalme-net-codecs";
     rev = "v${version}";
-    sha256 = "0cvy1mjqg967hfr611gwbg3aiblz5bg9k5ppk9xrcg4d3yx08dnz";
+    sha256 = "0h84snb8km4dy432qmhf1h4dcqdyq1bncjw7p1lpys1b1pzgrvrx";
   };
 
   buildInputs = [ ocaml findlib batteries parsercombinator ];
