@@ -34,11 +34,11 @@ let abbreviated_body body =
 let to_result_no_stream x =
   match HttpParser.P.to_result x with
   | Ok (b, _s) -> Ok b
-  | Bad _ as x -> x
+  | Error _ as x -> x
 
 let print_result print_output fmt = function
   | Ok b -> print_output fmt b
-  | Bad x -> HttpParser.P.print_bad_result print_output fmt x
+  | Error x -> HttpParser.P.print_bad_result print_output fmt x
 
 let abbreviate_body pdu =
   Msg.{ pdu with body = abbreviated_body pdu.body }

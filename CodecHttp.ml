@@ -283,7 +283,7 @@ struct
       c <> ':' && c <> ' ' && c <> '\t' &&
       field_value_char c in
     ((several_greedy ~sep:none ~what:"field name"
-        (cond "field name char" field_name_char 'x') >>: 
+        (cond "field name char" field_name_char 'x') >>:
       String.of_list) +-
      item ':' +- maybe_spaces ++
      (* TODO: multi-line values *)
